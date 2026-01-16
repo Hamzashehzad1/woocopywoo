@@ -4,11 +4,12 @@ import { initializeWooCommerce, testConnection } from '../services/woocommerce';
 import { Link2, CheckCircle, AlertCircle } from 'lucide-react';
 
 const Connection = () => {
-    const { connection, updateConnection } = useApp();
+    const { connection, updateConnection, grokApiKey, setGrokApiKey } = useApp();
     const [formData, setFormData] = useState({
         siteUrl: connection.siteUrl,
         consumerKey: connection.consumerKey,
-        consumerSecret: connection.consumerSecret
+        consumerSecret: connection.consumerSecret,
+        grokApiKey: grokApiKey
     });
     const [testing, setTesting] = useState(false);
     const [error, setError] = useState('');
@@ -50,6 +51,11 @@ const Connection = () => {
                 ...formData,
                 isConnected: true
             });
+
+            // Save Grok API Key
+            if (formData.grokApiKey) {
+                setGrokApiKey(formData.grokApiKey);
+            }
 
             setSuccess('Successfully connected to WooCommerce!');
         } catch (err) {
@@ -124,6 +130,22 @@ const Connection = () => {
                                 value={formData.consumerSecret}
                                 onChange={handleChange}
                             />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="grokApiKey">
+                                xAI (Grok) API Key <span style={{ fontSize: '0.8em', color: '#888', fontWeight: 'normal' }}>(Optional for AI)</span>
+                            </label>
+                            <input
+                                type="password"
+                                id="grokApiKey"
+                                name="grokApiKey"
+                                className="form-input"
+                                placeholder="xai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                value={formData.grokApiKey}
+                                onChange={handleChange}
+                            />
+                            <p className="form-hint">Required for "Real" AI generation. Get it from <a href="https://console.x.ai/" target="_blank" rel="noreferrer">console.x.ai</a></p>
                         </div>
 
                         {error && (

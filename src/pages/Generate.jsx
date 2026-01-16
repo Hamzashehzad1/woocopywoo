@@ -13,7 +13,8 @@ const Generate = () => {
         setAutoPush,
         generatedDescriptions,
         setGeneratedDescriptions,
-        markAsUpdated
+        markAsUpdated,
+        grokApiKey
     } = useApp();
 
     const [generating, setGenerating] = useState(false);
@@ -85,7 +86,8 @@ const Generate = () => {
             const descriptions = await generateBatchDescriptions(
                 selectedProductsData,
                 businessContext,
-                (prog) => setProgress(prog)
+                (prog) => setProgress(prog),
+                grokApiKey
             );
 
             setGeneratedDescriptions(descriptions);

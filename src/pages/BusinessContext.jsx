@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Building2, Users, FileText, Plus, X } from 'lucide-react';
+import { Building2, Users, FileText, Plus, X, Globe, Wand2, Loader2 } from 'lucide-react';
+import { analyzeCompanyWebsite } from '../services/aiGenerator';
 
 const BusinessContext = () => {
-    const { businessContext, updateBusinessContext, addUSP, removeUSP } = useApp();
+    const { businessContext, updateBusinessContext, addUSP, removeUSP, grokApiKey } = useApp();
     const [newUSP, setNewUSP] = useState('');
+    const [websiteUrl, setWebsiteUrl] = useState('');
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisError, setAnalysisError] = useState('');
 
     const handleChange = (e) => {
         updateBusinessContext({
@@ -23,6 +27,61 @@ const BusinessContext = () => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleAddUSP();
+        }
+    };
+
+    const handleAnalyzeWebsite = async () => {
+        if (!websiteUrl) return;
+        if (!grokApiKey) {
+            setAnalysisError('Please enter your Grok/Groq API Key in the Connection page first.');
+            return;
+        }
+
+        setAnalyzing(true);
+        setAnalysisError('');
+
+        try {
+            // Use allorigins as CORS proxy
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(websiteUrl)}`;
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+
+            if (!data.contents) {
+                throw new Error('Could not fetch website content');
+            }
+
+            // Extract text from HTML (simple strip tags)
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.contents, 'text/html');
+
+            // Remove scripts and styles
+            const scripts = doc.querySelectorAll('script, style');
+            scripts.forEach(script => script.remove());
+
+            const textContent = doc.body.innerText || doc.body.textContent;
+
+            // Analyze with Grok
+            const analysis = await analyzeCompanyWebsite(textContent, grokApiKey);
+
+            // Update context
+            updateBusinessContext({
+                companyName: analysis.companyName || businessContext.companyName,
+                targetAudience: analysis.targetAudience || businessContext.targetAudience,
+                description: analysis.description || businessContext.description,
+                businessType: analysis.businessType || 'wholesaler',
+                writingTone: analysis.writingTone || 'professional'
+            });
+
+            // Add new USPs
+            if (analysis.usps && Array.isArray(analysis.usps)) {
+                analysis.usps.forEach(usp => addUSP(usp));
+            }
+
+        } catch (err) {
+            console.error('Website analysis error:', err);
+            setAnalysisError('Failed to analyze website. Please check the URL.');
+        } finally {
+            setAnalyzing(false);
         }
     };
 
@@ -50,6 +109,34 @@ const BusinessContext = () => {
                 </div>
 
                 <div className="card-content">
+                    {/* Auto-fill Section */}
+                    <div className="bg-secondary p-md mb-md rounded-md">
+                        <label className="form-label flex gap-sm items-center" style={{ marginBottom: '0.5rem' }}>
+                            <Globe size={16} />
+                            Auto-fill from Website
+                        </label>
+                        <div className="flex gap-sm">
+                            <input
+                                type="url"
+                                className="form-input"
+                                placeholder="https://yourwebsite.com"
+                                value={websiteUrl}
+                                onChange={(e) => setWebsiteUrl(e.target.value)}
+                            />
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleAnalyzeWebsite}
+                                disabled={analyzing || !websiteUrl}
+                                style={{ whiteSpace: 'nowrap' }}
+                            >
+                                {analyzing ? <Loader2 className="spin" size={16} /> : <Wand2 size={16} />}
+                                {analyzing ? 'Analyzing...' : 'Analyze'}
+                            </button>
+                        </div>
+                        {analysisError && <p className="text-danger u-text-small mt-xs">{analysisError}</p>}
+                        {!grokApiKey && <p className="text-warning u-text-small mt-xs">Requires Groq API Key (set in Connection page)</p>}
+                    </div>
+
                     <div className="form-group">
                         <label className="form-label" htmlFor="companyName">
                             <Building2 size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />

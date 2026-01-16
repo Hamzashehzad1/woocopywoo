@@ -23,6 +23,11 @@ export const AppProvider = ({ children }) => {
     };
   });
 
+  // Grok API Key
+  const [grokApiKey, setGrokApiKey] = useState(() => {
+    return localStorage.getItem('grok_api_key') || '';
+  });
+
   // Business Context
   const [businessContext, setBusinessContext] = useState(() => {
     const saved = localStorage.getItem('business_context');
@@ -57,6 +62,12 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('woo_connection', JSON.stringify(connection));
   }, [connection]);
+
+  useEffect(() => {
+    if (grokApiKey) {
+      localStorage.setItem('grok_api_key', grokApiKey);
+    }
+  }, [grokApiKey]);
 
   useEffect(() => {
     localStorage.setItem('business_context', JSON.stringify(businessContext));
@@ -143,6 +154,7 @@ export const AppProvider = ({ children }) => {
       consumerSecret: '',
       isConnected: false
     });
+    setGrokApiKey(''); // Clear Grok Key
     setBusinessContext({
       companyName: '',
       targetAudience: '',
@@ -161,6 +173,8 @@ export const AppProvider = ({ children }) => {
   const value = {
     connection,
     updateConnection,
+    grokApiKey,
+    setGrokApiKey,
     businessContext,
     updateBusinessContext,
     addUSP,
