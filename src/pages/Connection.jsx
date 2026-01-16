@@ -167,16 +167,7 @@ const Connection = () => {
                 </div>
             </div>
 
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                <a
-                    href="https://lovable.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-secondary btn-sm"
-                >
-                    Edit with ❤️ Lovable
-                </a>
-            </div>
+
         </div>
     );
 };
